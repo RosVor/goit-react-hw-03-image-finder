@@ -28,17 +28,41 @@ class App extends Component {
 
   handleSubmit = (e) => {
     e.preventDefault();
-    this.setState({ images: [], page: 1 }, this.fetchImages);
+    const { query, prevQuery } = this.state;
+    const newQuery = e.target.querySelector('input').value;
+  
+    if (newQuery !== query) {
+      this.setState({ query: newQuery, page: 1, images: [] }, this.fetchImages);
+    } else {
+      this.fetchImages();
+    }
   };
 
   fetchImages = () => {
-    const { query, page } = this.state;
-    const apiKey = '38418747-ec354076649bfa1b688ea2611';
-    const baseUrl = 'https://pixabay.com/api/';
-    const perPage = 12;
+  const { query, page, prevQuery } = this.state;
+  const apiKey = '38418747-ec354076649bfa1b688ea2611';
+  const baseUrl = 'https://pixabay.com/api/';
+  const perPage = 12;
 
-    this.setState({ isLoading: true });
+  this.setState({ isLoading: true });
+  
+  if (query !== prevQuery) {
+    this.setState({ prevQuery: query }); 
 
+    fetch(
+      `${baseUrl}?q=${query}&page=${page}&key=${apiKey}&image_type=photo&orientation=horizontal&per_page=${perPage}`
+    )
+      .then((response) => response.json())
+      .then((data) =>
+        this.setState({
+          images: data.hits,
+          page: page + 1,
+          totalHits: data.totalHits,
+        })
+      )
+      .catch((error) => console.error('Error fetching images:', error))
+      .finally(() => this.setState({ isLoading: false }));
+  } else {
     fetch(
       `${baseUrl}?q=${query}&page=${page}&key=${apiKey}&image_type=photo&orientation=horizontal&per_page=${perPage}`
     )
@@ -46,12 +70,14 @@ class App extends Component {
       .then((data) =>
         this.setState((prevState) => ({
           images: [...prevState.images, ...data.hits],
-          page: prevState.page + 1,
+          page: page + 1,
+          totalHits: data.totalHits,
         }))
       )
       .catch((error) => console.error('Error fetching images:', error))
       .finally(() => this.setState({ isLoading: false }));
-  };
+  }
+};
 
   handleImageClick = (largeImageURL) => {
     this.setState({ largeImageURL, isModalOpen: true });
