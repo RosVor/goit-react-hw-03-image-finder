@@ -28,7 +28,7 @@ class App extends Component {
 
   handleSubmit = (e) => {
     e.preventDefault();
-    const { query, prevQuery } = this.state;
+    const { query } = this.state;
     const newQuery = e.target.querySelector('input').value;
   
     if (newQuery !== query) {
@@ -45,7 +45,7 @@ class App extends Component {
   const perPage = 12;
 
   this.setState({ isLoading: true });
-  
+
   if (query !== prevQuery) {
     this.setState({ prevQuery: query }); 
 
