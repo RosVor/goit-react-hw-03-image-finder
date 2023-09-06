@@ -14,6 +14,7 @@ class App extends Component {
     largeImageURL: '',
     isLoading: false,
     isModalOpen: false,
+    totalHits: 0, 
   };
 
   componentDidUpdate(prevProps, prevState) {
@@ -39,45 +40,46 @@ class App extends Component {
   };
 
   fetchImages = () => {
-  const { query, page, prevQuery } = this.state;
-  const apiKey = '38418747-ec354076649bfa1b688ea2611';
-  const baseUrl = 'https://pixabay.com/api/';
-  const perPage = 12;
-
-  this.setState({ isLoading: true });
-
-  if (query !== prevQuery) {
-    this.setState({ prevQuery: query }); 
-
-    fetch(
-      `${baseUrl}?q=${query}&page=${page}&key=${apiKey}&image_type=photo&orientation=horizontal&per_page=${perPage}`
-    )
-      .then((response) => response.json())
-      .then((data) =>
-        this.setState({
-          images: data.hits,
-          page: page + 1,
-          totalHits: data.totalHits,
-        })
+    const { query, page, prevQuery } = this.state;
+    const apiKey = '38418747-ec354076649bfa1b688ea2611';
+    const baseUrl = 'https://pixabay.com/api/';
+    const perPage = 12;
+  
+    this.setState({ isLoading: true });
+  
+    // Перевірка на зміну запиту перед виконанням нового запиту
+    if (query !== prevQuery) {
+      this.setState({ prevQuery: query, page: 1 }); // Оновити попередній запит і скинути сторінку до 1
+  
+      fetch(
+        `${baseUrl}?q=${query}&page=1&key=${apiKey}&image_type=photo&orientation=horizontal&per_page=${perPage}`
       )
-      .catch((error) => console.error('Error fetching images:', error))
-      .finally(() => this.setState({ isLoading: false }));
-  } else {
-    fetch(
-      `${baseUrl}?q=${query}&page=${page}&key=${apiKey}&image_type=photo&orientation=horizontal&per_page=${perPage}`
-    )
-      .then((response) => response.json())
-      .then((data) =>
-        this.setState((prevState) => ({
-          images: [...prevState.images, ...data.hits],
-          page: page + 1,
-          totalHits: data.totalHits,
-        }))
+        .then((response) => response.json())
+        .then((data) =>
+          this.setState({
+            images: data.hits,
+            page: 2,
+            totalHits: data.totalHits,
+          })
+        )
+        .catch((error) => console.error('Error fetching images:', error))
+        .finally(() => this.setState({ isLoading: false }));
+    } else {
+      fetch(
+        `${baseUrl}?q=${query}&page=${page}&key=${apiKey}&image_type=photo&orientation=horizontal&per_page=${perPage}`
       )
-      .catch((error) => console.error('Error fetching images:', error))
-      .finally(() => this.setState({ isLoading: false }));
-  }
-};
+        .then((response) => response.json())
+        .then((data) =>
+          this.setState((prevState) => ({
+            images: [...prevState.images, ...data.hits],
+            page: prevState.page + 1,
+            totalHits: data.totalHits,
+          }))
+        )
+        .catch((error) => console.error('Error fetching images:', error))
+        .finally(() => this.setState({ isLoading: false }));
+    }
+  };
 
   handleImageClick = (largeImageURL) => {
     this.setState({ largeImageURL, isModalOpen: true });
@@ -88,20 +90,20 @@ class App extends Component {
   };
 
   render() {
-    const { query, images, isLoading, isModalOpen, largeImageURL } = this.state;
-
+    const { query, images, isLoading, isModalOpen, largeImageURL, totalHits } = this.state;
+  
     return (
       <div className="App">
         <Searchbar query={query} onChange={this.handleInputChange} onSubmit={this.handleSubmit} />
-
+  
         <ImageGallery images={images} onImageClick={this.handleImageClick} />
-
+  
         {isLoading && <Loader />}
-
-        {images.length > 0 && !isLoading && (
+  
+        {images.length > 0 && images.length < totalHits && !isLoading && (
           <Button onClick={this.fetchImages} />
         )}
-
+  
         {isModalOpen && (
           <Modal largeImageURL={largeImageURL} onClose={this.handleCloseModal} />
         )}
